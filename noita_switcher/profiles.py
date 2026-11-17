@@ -51,7 +51,7 @@ class Info:
     name: str
     active: bool
     created: float
-    size: int | None  # bytes of live files (active) or archive (inactive); None if archive missing
+    size: int | None  # uncompressed bytes of the profile's files; None if archive missing/unreadable
     mode: str
 
 
@@ -237,6 +237,17 @@ class Store:
     def _live_size(self) -> int:
         return sum(p.stat().st_size for _rel, p, is_dir in self._live_entries() if not is_dir)
 
+    @staticmethod
+    def _archive_size(archive: Path) -> int | None:
+        """Uncompressed bytes of the files in an archive, comparable to ``_live_size``."""
+        if not archive.exists():
+            return None
+        try:
+            with tarfile.open(archive, "r:gz") as tar:
+                return sum(m.size for m in tar if m.isfile())
+        except (tarfile.TarError, OSError, EOFError):
+            return None
+
     def _write_archive(self, dest: Path) -> None:
         tmp = self._tmp_path()
         try:
@@ -320,7 +331,7 @@ class Store:
                 size = self._live_size()
             else:
                 arch = self._archive(state, name)
-                size = arch.stat().st_size if arch.exists() else None
+                size = self._archive_size(arch)
             infos.append(Info(name, is_active, meta["created"], size, meta.get("mode", DEFAULT_MODE)))
         return infos
 
