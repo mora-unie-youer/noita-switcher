@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "noita-switcher"
+version = "0.1.0"
+description = "Switch Noita's save00 between named profiles, synced via Steam Cloud"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+noita-switcher = "noita_switcher.cli:main"
+
+[tool.setuptools]
+packages = ["noita_switcher"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
