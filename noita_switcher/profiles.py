@@ -259,9 +259,18 @@ class Store:
             tmp.unlink(missing_ok=True)
 
     def _clear_live(self) -> None:
-        for _rel, p, is_dir in self._live_entries():
+        entries = self._live_entries()
+        for _rel, p, is_dir in entries:
             if not is_dir:
                 p.unlink()
+        # Drop the old profile's directory skeleton too (deepest first); the save00 root
+        # stays, and dirs still holding protected files are left alone.
+        for _rel, p, is_dir in sorted(entries, key=lambda e: e[0], reverse=True):
+            if is_dir and p != self.dir:
+                try:
+                    p.rmdir()
+                except OSError:
+                    pass
 
     def _check_member(self, m: tarfile.TarInfo) -> str:
         rel = PurePosixPath(m.name)
